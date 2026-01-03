@@ -109,7 +109,7 @@ def get_amazon_deals(api_key, country="TR"):
     all_deals = []
     
     # TURBO MOD: 10 Sayfa Tara (Daha çok veri)
-    for page in range(1, 11):
+    for page in range(1, 2):
         querystring = {
             "country": country, 
             "min_product_star_rating": "ALL", 
