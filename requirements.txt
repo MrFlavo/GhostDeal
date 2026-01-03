@@ -3,3 +3,5 @@ pandas
 requests
 google-search-results
 google-generativeai
+streamlit-lottie
+plotly
