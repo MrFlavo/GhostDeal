@@ -4,6 +4,15 @@ import time
 import requests
 from engine import search_all_sources, get_amazon_deals
 
+# ARAMA SONUÇLARINI ÖNBELLEKLE (1 Saat Boyunca Tekrar Sorgulama)
+@st.cache_data(ttl=3600, show_spinner=False)
+def cached_search(query, serp_key, rapid_key):
+    return search_all_sources(query, serp_key, rapid_key)
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def cached_deals(rapid_key, country="TR"):
+    return get_amazon_deals(rapid_key, country)
+
 # ==========================================
 # 1. SAYFA AYARLARI VE GÜVENLİK
 # ==========================================
@@ -310,7 +319,7 @@ if menu == "🔎 Analiz & Arama":
 
     if search_btn and query:
         with st.spinner("🚀 Piyasa taranıyor, aksesuarlar eleniyor..."):
-            df = search_all_sources(query, SERP_API_KEY, RAPID_API_KEY)
+            df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
             st.session_state.search_results = df
             st.session_state.last_query = query
     
@@ -371,7 +380,7 @@ elif menu == "🔥 Günün Fırsatları":
     
     if col_btn.button("YENİLE ↻", use_container_width=True):
         with st.spinner("📡 Global veriler çekiliyor (Turbo Mod)..."):
-            deals_df = get_amazon_deals(RAPID_API_KEY, country="TR")
+            deals_df = cached_deals(RAPID_API_KEY, country="TR")
             st.session_state.deals_results = deals_df
             
     if 'deals_results' in st.session_state and not st.session_state.deals_results.empty:
