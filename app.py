@@ -71,18 +71,38 @@ except ImportError:
 # ==========================================
 # 0. ELITE UI TASARIM & CSS (ZORLAMALI DARK MODE)
 # ==========================================
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
+
+/* Başlıkları Fütüristik Yap */
+h1, h2, h3 {
+    font-family: 'Orbitron', sans-serif !important;
+    letter-spacing: 2px;
+    background: -webkit-linear-gradient(45deg, #fff, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0px 0px 20px rgba(167, 139, 250, 0.3);
+}
+
+/* Normal yazılar temiz olsun */
+p, div, label, span {
+    font-family: 'Inter', sans-serif !important;
+}
 st.set_page_config(page_title="GhostDeal Pro", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-        /* --- 1. ANA ARKAPLAN VE YAZI RENGİ (ZORLAMALI) --- */
-        .stApp {
-            background-color: #0e1117 !important;
-        }
-        
-        /* Tüm metin elementlerini hedef al ve BEYAZ yap */
-        p, h1, h2, h3, h4, h5, h6, li, label, .stMarkdown, .stText, span {
-            color: #ffffff !important;
+      /* --- 1. HAREKETLİ ARKAPLAN (Living Gradient) --- */
+.stApp {
+    background: linear-gradient(-45deg, #0e1117, #1a103c, #0f172a, #000000);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
         }
         
         /* --- 2. SIDEBAR --- */
@@ -105,24 +125,32 @@ st.markdown("""
         /* --- 4. KART TASARIMLARI --- */
         
         /* Fırsat Kartı */
-        .deal-card {
-            background: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 16px;
-            padding: 12px;
-            height: 420px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .deal-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3);
-            border-color: #8b5cf6;
-        }
+      .deal-card {
+    /* Buzlu Cam Efekti */
+    background: rgba(30, 30, 30, 0.6); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
+    
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 15px;
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Yaylanma efekti */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover olunca Neon Parlama */
+.deal-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: #8b5cf6;
+    box-shadow: 
+        0 0 20px rgba(139, 92, 246, 0.4), /* Mor dış parlama */
+        inset 0 0 20px rgba(139, 92, 246, 0.1); /* İç parlama */
+}
 
         /* İndirim Rozeti */
         .discount-badge {
@@ -318,8 +346,17 @@ if menu == "🔎 Analiz & Arama":
         search_btn = st.button("ANALİZ ET", use_container_width=True)
 
     if search_btn and query:
-        with st.spinner("🚀 Piyasa taranıyor, aksesuarlar eleniyor..."):
-            df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
+        with st.status("📡 UYDU BAĞLANTISI KURULUYOR...", expanded=True) as status:
+    st.write("🔍 Global veritabanları taranıyor...")
+    time.sleep(1) # Efekt için bekleme
+    st.write("🧩 Çöp veriler temizleniyor...")
+    time.sleep(0.5)
+    
+    # İşlemi yap
+    df = search_all_sources(query, SERP_API_KEY, RAPID_API_KEY)
+    
+    st.write("✅ Fiyat analizi tamamlandı!")
+    status.update(label="🚀 GÖREV TAMAMLANDI", state="complete", expanded=False)
             st.session_state.search_results = df
             st.session_state.last_query = query
     
