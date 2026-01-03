@@ -2,16 +2,19 @@ import streamlit as st
 import pandas as pd
 import time
 import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import plotly.graph_objects as go
 from streamlit_lottie import st_lottie
 from engine import search_all_sources, get_amazon_deals
 
 # ==========================================
-# 1. AYARLAR, GÜVENLİK VE LOTTIE LOADER
+# 1. AYARLAR, GÜVENLİK VE MAİL FONKSİYONU
 # ==========================================
 st.set_page_config(page_title="GhostDeal Pro", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
-# --- LOTTIE ANİMASYON YÜKLEYİCİ ---
+# --- LOTTIE LOADER ---
 def load_lottieurl(url: str):
     try:
         r = requests.get(url)
@@ -19,13 +22,9 @@ def load_lottieurl(url: str):
         return r.json()
     except: return None
 
-# Animasyonları Hazırla
-lottie_tech = load_lottieurl("https://lottie.host/4b90a66a-1234-4567-8910-1234567890ab/placeholder.json") # Yedek link
-# Gerçek linkler (Eğer yüklenmezse boş geçer)
-anim_search = load_lottieurl("https://assets9.lottiefiles.com/packages/lf20_w51pcehl.json")
 anim_cart = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_6wjmecxo.json")
 
-# --- CACHING (ÖNBELLEK) ---
+# --- CACHING ---
 @st.cache_data(ttl=3600, show_spinner=False)
 def cached_search(query, serp_key, rapid_key):
     return search_all_sources(query, serp_key, rapid_key)
@@ -34,7 +33,7 @@ def cached_search(query, serp_key, rapid_key):
 def cached_deals(rapid_key, country="TR"):
     return get_amazon_deals(rapid_key, country)
 
-# --- GÜVENLİK DUVARI ---
+# --- GÜVENLİK DUVARI (LOGIN) ---
 def check_password():
     def password_entered():
         if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
@@ -52,6 +51,45 @@ def check_password():
         return False
     return True
 
+# --- MAİL GÖNDERME FONKSİYONU (GÖMÜLÜ) ---
+def send_email_alert(to_email, product_name, price, link):
+    try:
+        # GÖMÜLÜ GÖNDERİCİ BİLGİLERİ (Secrets'tan Okur)
+        sender_email = st.secrets["EMAIL_SENDER"]
+        sender_password = st.secrets["EMAIL_PASSWORD"]
+        
+        subject = f"🚨 FİYAT DÜŞTÜ: {product_name}"
+        body = f"""
+        <html>
+          <body>
+            <h2>🔥 GhostDeal Yakaladı!</h2>
+            <p>Takip ettiğin ürün hedefin altına düştü.</p>
+            <hr>
+            <h3>📦 {product_name}</h3>
+            <h1 style="color:green;">{price}</h1>
+            <br>
+            <a href="{link}" style="background-color:#8b5cf6; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">ÜRÜNE GİT</a>
+          </body>
+        </html>
+        """
+
+        msg = MIMEMultipart()
+        msg['From'] = "GhostDeal AI <" + sender_email + ">"
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+
+        # Gmail SMTP Sunucusu
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
 # --- API KEY YÜKLEME ---
 try:
     if check_password():
@@ -63,18 +101,27 @@ except:
     st.warning("⚠️ API Anahtarları bulunamadı. Lütfen Secrets ayarlarını yapın.")
     st.stop()
 
-# --- AI KONTROL ---
+# --- AI ---
 try:
     import google.generativeai as genai
     HAS_AI_LIBRARY = True
 except: HAS_AI_LIBRARY = False
 
 # ==========================================
-# 2. CYBERPUNK CSS TASARIM (AURORA & NEON)
+# 2. CYBERPUNK CSS (UI CLEANER)
 # ==========================================
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
+
+        /* --- UI TEMİZLİK (Header ve Tooltip Gizleme) --- */
+        header {visibility: hidden;} /* Üstteki renkli çizgi ve menüleri gizler */
+        #MainMenu {visibility: hidden;} /* Sağ üst menüyü gizler */
+        footer {visibility: hidden;} /* Alt yazıları gizler */
+        .stDeployButton {display:none;} /* Deploy butonunu yok eder */
+        
+        /* Sidebar Tooltip Fix */
+        [data-testid="stSidebarNav"] > ul {padding-top: 20px;}
 
         /* --- 1. LIVING BACKGROUND --- */
         .stApp {
@@ -101,7 +148,7 @@ st.markdown("""
         /* --- 3. SIDEBAR --- */
         [data-testid="stSidebar"] { background-color: rgba(22, 27, 34, 0.8) !important; backdrop-filter: blur(10px); border-right: 1px solid #30363d; }
         
-        /* --- 4. CAM KARTLAR (GLASSMORPHISM) --- */
+        /* --- 4. CAM KARTLAR --- */
         .deal-card {
             background: rgba(30, 30, 30, 0.4); 
             backdrop-filter: blur(10px); 
@@ -171,7 +218,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. YARDIMCI FONKSİYONLAR (KPI, Chart, Telegram)
+# 3. YARDIMCI FONKSİYONLAR
 # ==========================================
 def format_tl(val):
     return f"{val:,.2f} TL".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -204,13 +251,6 @@ def plot_neon_chart(df):
         st.plotly_chart(fig, use_container_width=True)
     except: pass
 
-def send_telegram_msg(token, chat_id, message):
-    try:
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        requests.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
-        return True
-    except: return False
-
 def get_seasonal_advice(product_name, current_price):
     if not HAS_AI_LIBRARY or not GEMINI_API_KEY: return None
     genai.configure(api_key=GEMINI_API_KEY)
@@ -229,12 +269,12 @@ with st.sidebar:
     st.markdown("""
         <div style="text-align: center; padding: 10px 0;">
             <h2 style="color:white; margin:0;">GhostDeal</h2>
-            <p style="color:#64748b; font-size: 0.7rem; letter-spacing: 2px;">ULTIMATE v16.0</p>
+            <p style="color:#64748b; font-size: 0.7rem; letter-spacing: 2px;">ULTIMATE v17.0</p>
         </div>
     """, unsafe_allow_html=True)
     
     st.markdown("---")
-    menu = st.radio("MENÜ", ["🔎 Analiz & Arama", "🔥 Günün Fırsatları", "🔔 Fiyat Alarmı"], label_visibility="collapsed")
+    menu = st.radio("MENÜ", ["🔎 Analiz & Arama", "🔥 Günün Fırsatları", "📧 Fiyat Alarmı"], label_visibility="collapsed")
     st.markdown("---")
     st.success("🟢 System Online")
 
@@ -265,7 +305,7 @@ if menu == "🔎 Analiz & Arama":
         best = df.iloc[0]
         avg_price = df['Fiyat'].mean()
         
-        # --- KPI DASHBOARD ---
+        # KPI DASHBOARD
         c1, c2, c3 = st.columns(3)
         with c1: render_kpi_card("En İyi Fiyat", format_tl(best['Fiyat']), "🔥", "#ef4444")
         with c2: render_kpi_card("Ortalama Piyasa", format_tl(avg_price), "⚖️", "#3b82f6")
@@ -273,7 +313,7 @@ if menu == "🔎 Analiz & Arama":
         
         st.write("")
         
-        # --- WINNER & CHART ---
+        # WINNER & CHART
         wc1, wc2 = st.columns([1, 1])
         with wc1:
             st.markdown(f"""
@@ -290,7 +330,6 @@ if menu == "🔎 Analiz & Arama":
             </div>
             """, unsafe_allow_html=True)
             
-            # AI Advice
             if st.button("✨ Yapay Zeka Yorumu"):
                  advice = get_seasonal_advice(st.session_state.last_query, format_tl(best['Fiyat']))
                  if advice: st.info(f"🤖 {advice}")
@@ -302,14 +341,28 @@ if menu == "🔎 Analiz & Arama":
         st.dataframe(df[['Resim', 'Fiyat', 'Satıcı', 'Kaynak', 'Ürün', 'Link']], hide_index=True, use_container_width=True, 
                      column_config={"Fiyat": st.column_config.NumberColumn(format="%.2f TL"), "Link": st.column_config.LinkColumn(display_text="Git"), "Resim": st.column_config.ImageColumn(width="small")})
 
-# --- B: VİTRİN ---
+# --- B: VİTRİN (AKILLI ZAMANLAYICI) ---
 elif menu == "🔥 Günün Fırsatları":
     c_head, c_btn = st.columns([4,1])
     c_head.markdown("<h2>🔥 AMAZON VİTRİNİ</h2>", unsafe_allow_html=True)
-    if c_btn.button("YENİLE ↻"):
-        with st.spinner("Veriler güncelleniyor..."):
-            st.session_state.deals_results = cached_deals(RAPID_API_KEY)
-            
+    
+    # ZAMANLAYICI MANTIĞI
+    current_time = time.time()
+    last_click = st.session_state.get('amazon_last_click', 0)
+    cooldown = 3600 # 1 Saat (3600 Saniye)
+
+    # Eğer 1 saat geçmediyse buton YOK, geri sayım VAR
+    if current_time - last_click < cooldown:
+        remaining_min = int((cooldown - (current_time - last_click)) / 60)
+        c_btn.info(f"⏳ {remaining_min} dk sonra")
+    else:
+        # 1 Saat geçtiyse BAŞLAT butonu çıkar
+        if c_btn.button("BAŞLAT 🚀", use_container_width=True):
+            st.session_state.amazon_last_click = current_time # Zamanı kaydet
+            with st.spinner("Veriler güncelleniyor..."):
+                st.session_state.deals_results = cached_deals(RAPID_API_KEY)
+            st.rerun() # Sayfayı yenile ki buton kaybolsun
+
     if 'deals_results' in st.session_state and not st.session_state.deals_results.empty:
         df = st.session_state.deals_results
         num_cols = 4
@@ -328,10 +381,10 @@ elif menu == "🔥 Günün Fırsatları":
                     </div>
                     """, unsafe_allow_html=True)
 
-# --- C: ALARM ---
-elif menu == "🔔 Fiyat Alarmı":
-    st.markdown("<h2>🔔 FİYAT TAKİPÇİSİ</h2>", unsafe_allow_html=True)
-    st.info("Bu sayfa açık kaldığı sürece tarama yapar.")
+# --- C: ALARM (MAIL EDITION) ---
+elif menu == "📧 Fiyat Alarmı":
+    st.markdown("<h2>📧 E-POSTA ALARMI</h2>", unsafe_allow_html=True)
+    st.info("Bu sayfa açık kaldığı sürece tarama yapar. Fiyat düşünce mail atar.")
     
     with st.container():
         c1, c2 = st.columns(2)
@@ -339,19 +392,28 @@ elif menu == "🔔 Fiyat Alarmı":
         target_price = c2.number_input("Hedef Fiyat (TL)", min_value=0, value=20000)
         interval = st.slider("Sıklık (Dk)", 5, 60, 15)
         
-        with st.expander("Ayarlar"):
-            tg_token = st.text_input("Bot Token", type="password")
-            tg_chat_id = st.text_input("Chat ID")
+        # SADECE MAIL ADRESİ İSTENİYOR
+        user_email = st.text_input("Bildirim Gönderilecek E-Posta Adresi")
             
         if st.button("BAŞLAT"):
-            st.session_state.monitoring = True
-            status = st.empty()
-            send_telegram_msg(tg_token, tg_chat_id, f"✅ Başladı: {target_product}")
-            while st.session_state.monitoring:
-                status.info(f"⏳ Kontrol: {time.strftime('%H:%M:%S')}")
-                df = cached_search(target_product, SERP_API_KEY, RAPID_API_KEY)
-                if not df.empty and df.iloc[0]['Fiyat'] <= target_price:
-                    send_telegram_msg(tg_token, tg_chat_id, f"🚨 DÜŞTÜ: {df.iloc[0]['Fiyat']} TL")
-                    st.balloons()
-                    break
-                time.sleep(interval * 60)
+            if not user_email or "@" not in user_email:
+                st.error("Lütfen geçerli bir mail adresi girin.")
+            else:
+                st.session_state.monitoring = True
+                status = st.empty()
+                # Deneme maili at
+                send_email_alert(user_email, target_product, "TAKİP BAŞLADI", "https://google.com")
+                st.success(f"✅ Takip başladı! {user_email} adresine test maili gönderildi.")
+                
+                while st.session_state.monitoring:
+                    status.info(f"⏳ Kontrol: {time.strftime('%H:%M:%S')}")
+                    df = cached_search(target_product, SERP_API_KEY, RAPID_API_KEY)
+                    
+                    if not df.empty:
+                        best_price = df.iloc[0]['Fiyat']
+                        if best_price <= target_price:
+                            send_email_alert(user_email, df.iloc[0]['Ürün'], format_tl(best_price), df.iloc[0]['Link'])
+                            st.balloons()
+                            st.success("HEDEF YAKALANDI! Mail Gönderildi.")
+                            break
+                    time.sleep(interval * 60)
