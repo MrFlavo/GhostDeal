@@ -75,15 +75,26 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
         
-        /* UI TEMİZLİK */
-        header {visibility: hidden;}
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stDeployButton {display:none;}
+        /* --- DÜZELTİLEN KISIM: HEADER VE SIDEBAR BUTONU --- */
+        header {
+            background: transparent !important; /* Arkaplanı şeffaf yap */
+        }
         
+        /* Sidebar açma/kapama butonunu (ok işareti) görünür yap ve rengini ayarla */
+        [data-testid="collapsedControl"] {
+            display: block !important;
+            color: #a78bfa !important; /* Neon Mor renk */
+            z-index: 10000; /* En önde dursun */
+        }
+        
+        /* Sağ üstteki menüyü ve Deploy butonunu gizle (İsteğe bağlı) */
+        .stDeployButton {display:none;}
+        #MainMenu {visibility: hidden;} 
+        footer {visibility: hidden;}
+
         /* --- 1. ARKAPLAN --- */
         .stApp {
-            background-color: #050505; /* Simsiyah mat zemin */
+            background-color: #050505; 
             background-image: radial-gradient(circle at 50% 50%, #1a103c 0%, #000 70%);
         }
 
@@ -104,7 +115,7 @@ st.markdown("""
             border-right: 1px solid #1f1f1f;
         }
 
-        /* --- 4. DASHBOARD KARTLARI (KARE) --- */
+        /* --- 4. DASHBOARD KARTLARI --- */
         .dashboard-card {
             background: linear-gradient(145deg, rgba(20, 20, 30, 0.8), rgba(10, 10, 15, 0.9));
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -113,7 +124,7 @@ st.markdown("""
             text-align: left;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
             transition: all 0.3s ease;
-            height: 160px; /* Kare olması için sabit yükseklik */
+            height: 160px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -157,7 +168,7 @@ st.markdown("""
             color: #94a3b8 !important;
         }
 
-        /* --- 5. FIRSAT KARTLARI (VİTRİN) --- */
+        /* --- 5. FIRSAT KARTLARI --- */
         .deal-card {
             background: rgba(20, 20, 20, 0.6); 
             backdrop-filter: blur(10px); 
