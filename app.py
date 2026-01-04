@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import requests
 import smtplib
+import difflib # YENİ KÜTÜPHANE: Kelime benzerliği için
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import plotly.graph_objects as go
@@ -173,28 +174,56 @@ def render_dashboard_card(title, value, icon="📊", color_class="purple"):
     </div>
     """, unsafe_allow_html=True)
 
-def plot_neon_curve(df):
+# --- YENİ: AKILLI FİLTRELEME MOTORU ---
+def filter_irrelevant_products(df, query, threshold=0.4):
+    """
+    Sorgudaki kelimelerin ürün başlığında geçme oranına göre filtreler.
+    threshold=0.4 demek, arattığın kelimelerin en az %40'ı üründe geçmeli.
+    """
+    if df.empty: return df
+    
+    # Sorguyu kelimelerine ayır ve küçült
+    query_words = set(query.lower().split())
+    
+    valid_indices = []
+    
+    for index, row in df.iterrows():
+        title_words = set(str(row['Ürün']).lower().split())
+        # Kesişim kümesi (Ortak kelimeler)
+        common_words = query_words.intersection(title_words)
+        
+        # Eşleşme oranı
+        if len(query_words) > 0:
+            match_ratio = len(common_words) / len(query_words)
+        else:
+            match_ratio = 0
+            
+        # Eğer eşleşme oranı eşikten büyükse listeye al
+        if match_ratio >= threshold:
+            valid_indices.append(index)
+            
+    return df.loc[valid_indices]
+
+def plot_neon_curve(df, avg_price, best_price):
     try:
-        df_sorted = df.sort_values(by="Fiyat", ascending=False).head(10)
+        df_sorted = df.sort_values(by="Fiyat", ascending=False).head(15)
         fig = go.Figure()
+        # Ana Çizgi
         fig.add_trace(go.Scatter(
-            x=df_sorted['Satıcı'], y=df_sorted['Fiyat'],
-            mode='lines+markers', line_shape='spline',
-            line=dict(color='#00f2ff', width=5),
-            marker=dict(size=10, color='#000', line=dict(width=3, color='#00f2ff')),
-            name="Fiyat Trendi"
+            x=df_sorted['Satıcı'], y=df_sorted['Fiyat'], mode='lines+markers', line_shape='spline',
+            line=dict(color='#00f2ff', width=4), marker=dict(size=8, color='#000', line=dict(width=2, color='#00f2ff')),
+            name="Mağaza Fiyatı"
         ))
-        fig.add_trace(go.Scatter(
-            x=df_sorted['Satıcı'], y=df_sorted['Fiyat'] * 1.1,
-            mode='lines', line_shape='spline',
-            line=dict(color='#8b5cf6', width=3, dash='dot'), opacity=0.5, name="Piyasa Ort."
-        ))
+        # Ortalama Çizgisi
+        fig.add_hline(y=avg_price, line_dash="dash", line_color="#8b5cf6", annotation_text="Ortalama")
+        # En İyi Fiyat Alanı
+        fig.add_hrect(y0=0, y1=best_price * 1.05, fillcolor="green", opacity=0.1, line_width=0)
+        
         fig.update_layout(
             template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=400, margin=dict(l=20, r=20, t=50, b=20),
-            title=dict(text="PRICE DROP CHART", font=dict(size=20, family="Orbitron", color="white")),
-            xaxis=dict(showgrid=False, color="#666"), yaxis=dict(showgrid=True, gridcolor="#222", color="#666"),
-            hovermode="x unified"
+            height=380, margin=dict(l=20, r=20, t=40, b=20),
+            title=dict(text="FİYAT ANALİZİ", font=dict(family="Orbitron", color="white")),
+            xaxis=dict(showgrid=False, showticklabels=False), yaxis=dict(showgrid=True, gridcolor="#222")
         )
         st.plotly_chart(fig, use_container_width=True)
     except: pass
@@ -237,49 +266,60 @@ with st.sidebar:
 if menu == "DASHBOARD":
     col_head, col_search = st.columns([1, 2])
     with col_head: st.markdown("<h2>Data Dashboard</h2>", unsafe_allow_html=True)
-    with col_search: query = st.text_input("Global Piyasada Ara...", placeholder="Ürün adı girin (örn: MacBook Pro M3)", label_visibility="collapsed")
+    with col_search: query = st.text_input("Global Piyasada Ara...", placeholder="Örn: Stanley IceFlow 0.47", label_visibility="collapsed")
 
     if query:
-        with st.spinner("📡 UYDU BAĞLANTISI KURULUYOR..."):
-            df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
+        with st.spinner("📡 Veriler Toplanıyor ve Temizleniyor..."):
+            raw_df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
+            
+            # --- YENİ: FİLTRELEME ADIMI ---
+            # %50 kelime eşleşmesi olmayan ürünleri çöpe at
+            df = filter_irrelevant_products(raw_df, query, threshold=0.5) 
+            
             st.session_state.search_results = df
             
     if 'search_results' in st.session_state and not st.session_state.search_results.empty:
         df = st.session_state.search_results
-        best = df.iloc[0]
+        
+        # İstatistikler (Filtrelenmiş veriden)
+        best_price = df['Fiyat'].min()
+        avg_price = df['Fiyat'].mean()
+        max_price = df['Fiyat'].max()
+        saving_ratio = ((avg_price - best_price) / avg_price) * 100
         
         st.markdown("---")
-        col_left, col_right = st.columns([2, 3])
+        col_left, col_right = st.columns([2, 3], gap="medium")
         
         with col_left:
             c1, c2 = st.columns(2)
-            with c1: render_dashboard_card("En İyi Fiyat", format_tl(best['Fiyat']), "💎")
-            with c2: render_dashboard_card("Piyasa Ort.", format_tl(df['Fiyat'].mean()), "⚖️")
+            with c1: render_dashboard_card("En İyi Fiyat", format_tl(best_price), "💎")
+            with c2: render_dashboard_card("Piyasa Ort.", format_tl(avg_price), "⚖️")
             st.write("")
             c3, c4 = st.columns(2)
-            with c3: render_dashboard_card("Mağaza Sayısı", str(len(df)), "🏪")
-            with c4: render_dashboard_card("Tasarruf", "%15", "📉")
+            with c3: render_dashboard_card("Fiyat Farkı", f"%{saving_ratio:.1f}", "📉")
+            with c4: render_dashboard_card("Mağaza", str(len(df)), "🏪")
             st.write("")
             if st.button("✨ YZ Analizi Başlat", use_container_width=True, key="ai_btn"):
-                advice = get_seasonal_advice(query, format_tl(best['Fiyat']))
+                advice = get_seasonal_advice(query, format_tl(best_price))
                 if advice: st.info(f"🤖 {advice}")
 
         with col_right:
-            plot_neon_curve(df)
+            plot_neon_curve(df, avg_price, best_price)
             
-        st.markdown("### 🛒 En İyi Teklifler")
-        # DÜZELTME: Resim ve Ürün sütunları eklendi
+        st.markdown(f"### 🛒 Filtrelenmiş Sonuçlar: {query}")
         st.dataframe(
-            df[['Resim', 'Ürün', 'Fiyat', 'Satıcı', 'Link']], 
+            df.sort_values(by="Fiyat")[['Resim', 'Ürün', 'Fiyat', 'Satıcı', 'Link']], 
             hide_index=True, 
             use_container_width=True,
             column_config={
                 "Resim": st.column_config.ImageColumn("Görsel", width="small"),
                 "Ürün": st.column_config.TextColumn("Ürün Adı", width="large"),
                 "Link": st.column_config.LinkColumn("Satın Al", display_text="Mağazaya Git ↗"),
-                "Fiyat": st.column_config.NumberColumn(format="%.2f TL")
+                "Fiyat": st.column_config.ProgressColumn("Fiyat", format="%.2f TL", min_value=best_price, max_value=max_price)
             }
         )
+    elif 'search_results' in st.session_state:
+        st.warning("⚠️ Aradığınız kriterlere uygun ürün bulunamadı. Lütfen ürün adını daha genel yazın.")
 
 # --- B: VİTRİN ---
 elif menu == "AMAZON VİTRİN":
@@ -323,21 +363,25 @@ elif menu == "FİYAT ALARMI":
     price = c2.number_input("Hedef Fiyat", value=20000)
     mail = st.text_input("E-Posta Adresi")
     
-    # DÜZELTME: Key eklendi ve döngü tamamlandı
     if st.button("TAKİBİ BAŞLAT", key="btn_alarm_start"):
         if mail and prod:
-            st.success(f"✅ Sistem {mail} adresini dinlemeye başladı.")
+            st.success(f"✅ Takip Başladı! {mail} adresine bildirim gidecek.")
             st.session_state.monitoring = True
             status = st.empty()
             while st.session_state.monitoring:
                 status.info(f"⏳ Taranıyor: {time.strftime('%H:%M:%S')}")
-                df = cached_search(prod, SERP_API_KEY, RAPID_API_KEY)
-                if not df.empty and df.iloc[0]['Fiyat'] <= price:
-                    send_email_alert(mail, df.iloc[0]['Ürün'], format_tl(df.iloc[0]['Fiyat']), df.iloc[0]['Link'])
-                    st.balloons()
-                    st.success("HEDEF YAKALANDI! Mail gönderildi.")
-                    st.session_state.monitoring = False
-                    break
-                time.sleep(900) # 15 Dakika
+                # Alarmda da filtreli arama yapıyoruz ki yanlış alarma düşmesin
+                raw_df = cached_search(prod, SERP_API_KEY, RAPID_API_KEY)
+                df = filter_irrelevant_products(raw_df, prod, threshold=0.5)
+                
+                if not df.empty:
+                    best_row = df.sort_values(by="Fiyat").iloc[0]
+                    if best_row['Fiyat'] <= price:
+                        send_email_alert(mail, best_row['Ürün'], format_tl(best_row['Fiyat']), best_row['Link'])
+                        st.balloons()
+                        st.success("HEDEF YAKALANDI! Mail gönderildi.")
+                        st.session_state.monitoring = False
+                        break
+                time.sleep(900)
         else:
             st.error("Lütfen tüm alanları doldurun.")
