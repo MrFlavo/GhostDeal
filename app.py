@@ -381,7 +381,6 @@ if menu == "DASHBOARD":
         )
 
 # --- B: VİTRİN (AMAZON) ---
-# --- B: VİTRİN (AMAZON) ---
 elif menu == "AMAZON VİTRİN":
     c1, c2 = st.columns([4,1])
     c1.markdown("<h2>🔥 AMAZON LIVE</h2>", unsafe_allow_html=True)
@@ -389,10 +388,14 @@ elif menu == "AMAZON VİTRİN":
     # Zamanlayıcı
     curr = time.time()
     last = st.session_state.get('last_amz', 0)
+    
+    # Eğer 1 saat (3600 sn) geçmediyse geri sayım yap
     if curr - last < 3600:
-        c2.warning(f"⏳ {(3600-(curr-last))//60:.0f} dk kaldı")
+        remaining = int((3600 - (curr - last)) / 60)
+        c2.warning(f"⏳ {remaining} dk kaldı")
     else:
-        if c2.button("BAŞLAT 🚀"):
+        # HATA BURADAYDI -> key="btn_amazon_start" EKLEYEREK ÇÖZDÜK
+        if c2.button("BAŞLAT 🚀", key="btn_amazon_start"):
             st.session_state.last_amz = curr
             st.session_state.deals = cached_deals(RAPID_API_KEY)
             st.rerun()
@@ -410,32 +413,6 @@ elif menu == "AMAZON VİTRİN":
                     <div style="margin-top:10px; font-weight:bold; color:white; height: 50px; overflow: hidden;">{row['Ürün'][:50]}...</div>
                     <div style="font-size:1.5rem; color:#4ade80; font-weight:900;">{format_tl(row['Fiyat'])}</div>
                     <div style="text-decoration:line-through; color:#666; font-size:0.8rem;">{format_tl(row['Eski Fiyat'])}</div>
-                    <a href="{row['Link']}" target="_blank" style="display:block; text-align:center; background:#8b5cf6; color:white; padding:8px; border-radius:5px; margin-top:10px; text-decoration:none;">İNCELE</a>
-                </div>
-                <br>
-                """, unsafe_allow_html=True)
-    
-    # Zamanlayıcı
-    curr = time.time()
-    last = st.session_state.get('last_amz', 0)
-    if curr - last < 3600:
-        c2.warning(f"⏳ {(3600-(curr-last))//60:.0f} dk kaldı")
-    else:
-        if c2.button("BAŞLAT 🚀"):
-            st.session_state.last_amz = curr
-            st.session_state.deals = cached_deals(RAPID_API_KEY)
-            st.rerun()
-
-    if 'deals' in st.session_state and not st.session_state.deals.empty:
-        df = st.session_state.deals
-        cols = st.columns(4)
-        for i, row in df.iterrows():
-            with cols[i % 4]:
-                st.markdown(f"""
-                <div class="deal-card">
-                    <img src="{row['Resim']}" style="width:100%; height:150px; object-fit:contain;">
-                    <div style="margin-top:10px; font-weight:bold; color:white;">{row['Ürün'][:40]}...</div>
-                    <div style="font-size:1.5rem; color:#4ade80; font-weight:900;">{format_tl(row['Fiyat'])}</div>
                     <a href="{row['Link']}" target="_blank" style="display:block; text-align:center; background:#8b5cf6; color:white; padding:8px; border-radius:5px; margin-top:10px; text-decoration:none;">İNCELE</a>
                 </div>
                 <br>
