@@ -8,3 +8,5 @@ plotly
 pyzbar
 opencv-python-headless
 pillow
+XlsxWriter
+openpyxl
