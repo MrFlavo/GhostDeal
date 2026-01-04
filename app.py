@@ -4,6 +4,7 @@ import time
 import requests
 import smtplib
 import random
+import io  # YENİ: Excel'i hafızada oluşturmak için
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -96,7 +97,7 @@ def send_email_alert(to_email, product_name, price, link):
     except: return False
 
 # ==========================================
-# 2. COMMAND CENTER CSS (ORİJİNAL)
+# 2. CSS (ORİJİNAL TASARIM + FIXES)
 # ==========================================
 st.markdown("""
     <style>
@@ -105,20 +106,23 @@ st.markdown("""
         header {background: transparent !important;}
         [data-testid="collapsedControl"] {display: block !important; color: #a78bfa !important;}
         .stDeployButton, #MainMenu, footer {display:none; visibility: hidden;}
+        
         .stApp {
             background-color: #050505; 
             background-image: radial-gradient(circle at 50% 50%, #1a103c 0%, #000 70%);
             color: #cbd5e1; font-family: 'Inter', sans-serif;
             padding-bottom: 80px;
         }
+
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif !important; letter-spacing: 2px;
             background: linear-gradient(90deg, #a78bfa, #3b82f6);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0px 0px 30px rgba(59, 130, 246, 0.5);
         }
+
         [data-testid="stSidebar"] {background-color: #0a0a0a !important; border-right: 1px solid #1f1f1f;}
-        
+
         /* DASHBOARD KARTLARI */
         .dashboard-card {
             background: linear-gradient(145deg, rgba(20, 20, 30, 0.8), rgba(10, 10, 15, 0.9));
@@ -128,16 +132,18 @@ st.markdown("""
             justify-content: center; position: relative; overflow: hidden;
         }
         .dashboard-card::before {content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #8b5cf6, #3b82f6); box-shadow: 0 0 10px #8b5cf6;}
+        
         .card-icon {font-size: 24px; margin-bottom: 10px; background: rgba(139, 92, 246, 0.2); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #a78bfa;}
         .card-value {font-size: 1.8rem; font-weight: 700; color: white !important; font-family: 'Orbitron', sans-serif !important;}
         .card-label {font-size: 0.85rem; color: #94a3b8 !important;}
 
-        /* Responsive Düzeltme: Ekran küçülünce fontları ve kart yüksekliğini ayarla */
+        /* Responsive Fix */
         @media (max-width: 900px) {
             .card-value { font-size: 1.3rem !important; }
             .dashboard-card { height: auto !important; min-height: 140px; }
         }
 
+        /* DEAL CARDS */
         .discount-badge {
             position: absolute; top: 10px; right: 10px;
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
@@ -148,6 +154,8 @@ st.markdown("""
             background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 16px; padding: 15px; height: 420px; display: flex; flex-direction: column; justify-content: space-between; position: relative;
         }
+
+        /* TICKER */
         .ticker-wrap {
             position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; height: 40px;
             background-color: rgba(10, 10, 10, 0.95); border-top: 1px solid #333; z-index: 9999;
@@ -161,7 +169,7 @@ st.markdown("""
         .ticker-up { color: #4ade80; } .ticker-down { color: #ef4444; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* Kamera Butonu Stili */
+        /* Kamera Butonu */
         div[data-testid="stButton"] > button {
             width: 100%; height: 100%; border-radius: 10px;
             background-color: #1a1a1a; color: #a78bfa; border: 1px solid #333;
@@ -221,17 +229,49 @@ def render_dashboard_card(title, value, icon="📊"):
     </div>
     """, unsafe_allow_html=True)
 
+# --- YENİ: EXCEL OLUŞTURUCU (PROFESYONEL) ---
+def to_excel(df):
+    output = io.BytesIO()
+    # Excel Writer
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # İstenmeyen sütunları (Resim linki vb.) çıkar, temiz tablo yap
+        clean_df = df[['Ürün', 'Fiyat', 'Satıcı', 'Link']].copy()
+        clean_df.to_excel(writer, index=False, sheet_name='GhostDeal_Analiz')
+        
+        workbook = writer.book
+        worksheet = writer.sheets['GhostDeal_Analiz']
+        
+        # Formatlar
+        header_fmt = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#8b5cf6', 'border': 1})
+        currency_fmt = workbook.add_format({'num_format': '#,##0.00 "TL"'})
+        link_fmt = workbook.add_format({'font_color': 'blue', 'underline': 1})
+        
+        # Sütun Genişlikleri ve Formatlama
+        worksheet.set_column('A:A', 50) # Ürün Adı (Geniş)
+        worksheet.set_column('B:B', 15, currency_fmt) # Fiyat (TL Formatlı)
+        worksheet.set_column('C:C', 20) # Satıcı
+        worksheet.set_column('D:D', 40, link_fmt) # Link
+        
+        # Başlık Formatını Uygula
+        for col_num, value in enumerate(clean_df.columns.values):
+            worksheet.write(0, col_num, value, header_fmt)
+            
+    return output.getvalue()
+
 # ==========================================
-# 4. SIDEBAR
+# 4. SIDEBAR (LOGO EKLİ)
 # ==========================================
 with st.sidebar:
     if anim_cart: st_lottie(anim_cart, height=100, key="nav_lottie")
     st.markdown("""
         <div style="text-align: center;">
-            <h2 style='display: flex; align-items: center; justify-content: center; gap: 10px; color: #a78bfa; margin: 0;'>
-                <span style="font-family: 'Orbitron';">GhostDeal</span>
+            <h2 style='display: flex; align-items: center; justify-content: center; gap: 10px; color: #a78bfa; margin: 0; padding: 0; text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="fill: #a78bfa; filter: drop-shadow(0 0 5px #a78bfa);">
+                    <path d="M12 2C7.58 2 4 5.58 4 10v10c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V10c0-4.42-3.58-8-8-8zm0 2c3.31 0 6 2.69 6 6v8h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H8v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H6V10c0-3.31 2.69-6 6-6zm-3 5c.83 0 1.5.67 1.5 1.5S9.83 12 9 12s-1.5-.67-1.5-1.5S8.17 9 9 9zm6 0c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"/>
+                </svg>
+                <span style="font-family: 'Orbitron', sans-serif;">GhostDeal</span>
             </h2>
-            <p style='color: #666; font-size: 0.6rem; letter-spacing: 2px;'>ULTIMATE VISION v24.0</p>
+            <p style='color: #666; font-size: 0.6rem; letter-spacing: 2px; margin-top: 5px; opacity: 0.8;'>ULTIMATE VISION v24.2</p>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
@@ -249,16 +289,14 @@ if menu == "DASHBOARD":
     col_search, col_cam = st.columns([6, 1], gap="small")
     
     with col_search:
-        # Session state'den sorguyu al (Barkod varsa gelir)
         initial_q = st.session_state.get('search_query', "")
         query = st.text_input("Arama", value=initial_q, placeholder="Ürün adı girin veya kamerayı açın...", label_visibility="collapsed")
     
     with col_cam:
-        # Kamera Toggle Butonu
         if st.button("📷", help="Barkod Tara"):
             st.session_state.show_cam = not st.session_state.get('show_cam', False)
     
-    # Kamera Alanı (Butona basılınca açılır)
+    # Kamera Alanı
     if st.session_state.get('show_cam', False):
         st.info("💡 Barkodu gösterin...")
         cam_in = st.camera_input("Scanner", label_visibility="collapsed")
@@ -269,13 +307,13 @@ if menu == "DASHBOARD":
                 b_data = decoded[0].data.decode("utf-8")
                 st.success(f"✅ Okundu: {b_data}")
                 st.session_state.search_query = b_data
-                st.session_state.show_cam = False # Kamerayı kapat
-                st.rerun() # Sayfayı yenile ve aramayı yap
+                st.session_state.show_cam = False 
+                st.rerun() 
             else: st.warning("❌ Okunamadı.")
 
     # Arama İşlemi
     if query:
-        st.session_state.search_query = query # Sorguyu sabitle
+        st.session_state.search_query = query 
         with st.spinner("📡 Global Piyasalar Taranıyor..."):
             raw_df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
             df = filter_irrelevant_products(raw_df, query)
@@ -310,8 +348,14 @@ if menu == "DASHBOARD":
                          "Fiyat": st.column_config.NumberColumn(format="%.2f TL")
                      })
         
-        csv = df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 Analiz Raporunu İndir", csv, f"GhostDeal_{query}.csv", "text/csv")
+        # --- YENİ: PROFESYONEL EXCEL ÇIKTISI ---
+        df_xlsx = to_excel(df)
+        st.download_button(
+            label="📥 Profesyonel Rapor İndir (.xlsx)",
+            data=df_xlsx,
+            file_name=f'GhostDeal_{query}.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
 
 # --- AMAZON VİTRİN ---
 elif menu == "AMAZON VİTRİN":
@@ -374,9 +418,13 @@ st.markdown(f"""
 <div class="ticker-wrap">
     <div class="ticker">
         <div class="ticker-item">GHOSTDEAL LIVE 🟢</div>
-        <div class="ticker-item">EUR/TL: {50.37 + random.uniform(-0.1, 0.1):.2f}</div>
-        <div class="ticker-item">USD/TL: {43.18 + random.uniform(-0.1, 0.1):.2f}</div>
-        <div class="ticker-item">XU100.IS/TL: {11498 + random.uniform(-0.1, 0.1):.2f}</div>
+        <div class="ticker-item">MGROS <span class="ticker-up">▲ %1.2</span></div>
+        <div class="ticker-item">GARAN <span class="ticker-down">▼ %0.5</span></div>
+        <div class="ticker-item">iPhone 17 Pro <span class="ticker-down">▼ %12.4 (Fırsat)</span></div>
+        <div class="ticker-item">BMW 216d Bakım Kiti <span class="ticker-up">▲ %2.1</span></div>
+        <div class="ticker-item">USD/TL: {34.20 + random.uniform(-0.1, 0.1):.2f}</div>
+        <div class="ticker-item">BIMAS <span class="ticker-up">▲ %0.8</span></div>
+        <div class="ticker-item">Stanley IceFlow <span class="ticker-down">▼ %15.0 (Ghost Deal)</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
