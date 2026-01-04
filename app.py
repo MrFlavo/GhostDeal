@@ -172,6 +172,21 @@ st.markdown("""
         }
 
         /* --- 5. FIRSAT KARTLARI --- */
+        
+        /* --- EKLENEN: İNDİRİM ROZETİ --- */
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); /* Hafif kırmızı parlama */
+            z-index: 2;
+        }
         .deal-card {
             background: rgba(20, 20, 20, 0.6); 
             backdrop-filter: blur(10px); 
@@ -366,9 +381,39 @@ if menu == "DASHBOARD":
         )
 
 # --- B: VİTRİN (AMAZON) ---
+# --- B: VİTRİN (AMAZON) ---
 elif menu == "AMAZON VİTRİN":
     c1, c2 = st.columns([4,1])
     c1.markdown("<h2>🔥 AMAZON LIVE</h2>", unsafe_allow_html=True)
+    
+    # Zamanlayıcı
+    curr = time.time()
+    last = st.session_state.get('last_amz', 0)
+    if curr - last < 3600:
+        c2.warning(f"⏳ {(3600-(curr-last))//60:.0f} dk kaldı")
+    else:
+        if c2.button("BAŞLAT 🚀"):
+            st.session_state.last_amz = curr
+            st.session_state.deals = cached_deals(RAPID_API_KEY)
+            st.rerun()
+
+    if 'deals' in st.session_state and not st.session_state.deals.empty:
+        df = st.session_state.deals
+        cols = st.columns(4)
+        for i, row in df.iterrows():
+            with cols[i % 4]:
+                st.markdown(f"""
+                <div class="deal-card">
+                    <span class="discount-badge">-{row['İndirim_Yazisi']}</span>
+                    
+                    <img src="{row['Resim']}" style="width:100%; height:150px; object-fit:contain;">
+                    <div style="margin-top:10px; font-weight:bold; color:white; height: 50px; overflow: hidden;">{row['Ürün'][:50]}...</div>
+                    <div style="font-size:1.5rem; color:#4ade80; font-weight:900;">{format_tl(row['Fiyat'])}</div>
+                    <div style="text-decoration:line-through; color:#666; font-size:0.8rem;">{format_tl(row['Eski Fiyat'])}</div>
+                    <a href="{row['Link']}" target="_blank" style="display:block; text-align:center; background:#8b5cf6; color:white; padding:8px; border-radius:5px; margin-top:10px; text-decoration:none;">İNCELE</a>
+                </div>
+                <br>
+                """, unsafe_allow_html=True)
     
     # Zamanlayıcı
     curr = time.time()
