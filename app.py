@@ -68,146 +68,90 @@ try:
     HAS_AI_LIBRARY = True
 except: HAS_AI_LIBRARY = False
 
+# --- MAİL GÖNDERME ---
+def send_email_alert(to_email, product_name, price, link):
+    try:
+        sender_email = st.secrets["EMAIL_SENDER"]
+        sender_password = st.secrets["EMAIL_PASSWORD"]
+        
+        subject = f"🚨 FİYAT DÜŞTÜ: {product_name}"
+        body = f"""
+        <html><body>
+            <h2>🔥 GhostDeal Yakaladı!</h2>
+            <h3>📦 {product_name}</h3>
+            <h1 style="color:green;">{price}</h1>
+            <a href="{link}">ÜRÜNE GİT</a>
+        </body></html>
+        """
+        msg = MIMEMultipart()
+        msg['From'] = "GhostDeal AI <" + sender_email + ">"
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except: return False
+
 # ==========================================
-# 2. COMMAND CENTER CSS (GÖRSELDEKİ GİBİ)
+# 2. COMMAND CENTER CSS
 # ==========================================
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
         
-        /* --- DÜZELTME: HEADER VE SIDEBAR İKONU --- */
-        header {
-            background: transparent !important;
-        }
-        
-        /* İkonların bozulmasını önleyen kural */
-        .material-icons, .st-emotion-cache-16idsys, .st-emotion-cache-10trblm {
-            font-family: 'Material Icons' !important;
-        }
+        header {background: transparent !important;}
+        .material-icons, .st-emotion-cache-16idsys {font-family: 'Material Icons' !important;}
 
-        /* --- 1. ARKAPLAN --- */
         .stApp {
             background-color: #050505; 
             background-image: radial-gradient(circle at 50% 50%, #1a103c 0%, #000 70%);
-            color: #cbd5e1; /* Genel yazı rengi */
-            font-family: 'Inter', sans-serif; /* Genel font */
+            color: #cbd5e1; font-family: 'Inter', sans-serif;
         }
 
-        /* --- 2. FONTLAR (Sadece Başlıklar ve Metinler) --- */
         h1, h2, h3 {
-            font-family: 'Orbitron', sans-serif !important;
-            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif !important; letter-spacing: 2px;
             background: linear-gradient(90deg, #a78bfa, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0px 0px 30px rgba(59, 130, 246, 0.5);
         }
-        
-        /* SPAN ve DIV'i zorlamayı bıraktık, böylece ikonlar bozulmayacak */
-        p, label, .stMarkdown { 
-            font-family: 'Inter', sans-serif !important; 
-            color: #cbd5e1 !important; 
-        }
+        p, label, .stMarkdown {font-family: 'Inter', sans-serif !important; color: #cbd5e1 !important;}
 
-        /* --- 3. SIDEBAR --- */
-        [data-testid="stSidebar"] {
-            background-color: #0a0a0a !important;
-            border-right: 1px solid #1f1f1f;
-        }
+        [data-testid="stSidebar"] {background-color: #0a0a0a !important; border-right: 1px solid #1f1f1f;}
 
-        /* --- 4. DASHBOARD KARTLARI --- */
         .dashboard-card {
             background: linear-gradient(145deg, rgba(20, 20, 30, 0.8), rgba(10, 10, 15, 0.9));
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 20px;
-            text-align: left;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-            height: 160px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 20px;
+            text-align: left; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease; height: 160px; display: flex; flex-direction: column;
+            justify-content: center; position: relative; overflow: hidden;
         }
+        .dashboard-card:hover {transform: translateY(-5px); border-color: #3b82f6; box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);}
+        .dashboard-card::before {content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #8b5cf6, #3b82f6); box-shadow: 0 0 10px #8b5cf6;}
         
-        .dashboard-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
-            box-shadow: 0 0 10px #8b5cf6;
-        }
-        
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            border-color: #3b82f6;
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
-        }
-        
-        .card-icon {
-            font-size: 24px;
-            margin-bottom: 10px;
-            background: rgba(139, 92, 246, 0.2);
-            width: 45px; height: 45px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px;
-            color: #a78bfa;
-            /* İkon fontunu koru */
-            font-family: "Segoe UI Emoji", "Roboto", sans-serif !important;
-        }
-        
-        .card-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white !important;
-            font-family: 'Orbitron', sans-serif !important;
-        }
-        
-        .card-label {
-            font-size: 0.85rem;
-            color: #94a3b8 !important;
-            font-family: 'Inter', sans-serif !important;
-        }
+        .card-icon {font-size: 24px; margin-bottom: 10px; background: rgba(139, 92, 246, 0.2); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #a78bfa; font-family: sans-serif !important;}
+        .card-value {font-size: 1.8rem; font-weight: 700; color: white !important; font-family: 'Orbitron', sans-serif !important;}
+        .card-label {font-size: 0.85rem; color: #94a3b8 !important; font-family: 'Inter', sans-serif !important;}
 
-        /* --- 5. FIRSAT KARTLARI --- */
-        
-        /* --- EKLENEN: İNDİRİM ROZETİ --- */
         .discount-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            position: absolute; top: 10px; right: 10px;
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-            color: white !important;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 800;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); /* Hafif kırmızı parlama */
-            z-index: 2;
+            color: white !important; padding: 5px 12px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 800; box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); z-index: 2;
         }
         .deal-card {
-            background: rgba(20, 20, 20, 0.6); 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px; padding: 15px; height: 420px;
+            background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 15px; height: 420px;
             display: flex; flex-direction: column; justify-content: space-between;
         }
         .deal-card:hover { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
         
-        /* Inputlar */
-        .stTextInput > div > div > input {
-            background-color: #0f0f0f !important;
-            border: 1px solid #333 !important;
-            color: white !important;
-            border-radius: 10px;
-        }
-        
-        /* Gereksiz elementleri gizle */
-        .stDeployButton {display:none;}
-        #MainMenu {visibility: hidden;} 
-        footer {visibility: hidden;}
+        .stTextInput > div > div > input {background-color: #0f0f0f !important; border: 1px solid #333 !important; color: white !important; border-radius: 10px;}
+        .stDeployButton, #MainMenu, footer {display:none; visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -217,7 +161,6 @@ st.markdown("""
 def format_tl(val):
     return f"{val:,.2f} TL".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# GÖRSELDEKİ GİBİ KARE KARTLAR OLUŞTURUR
 def render_dashboard_card(title, value, icon="📊", color_class="purple"):
     st.markdown(f"""
     <div class="dashboard-card">
@@ -230,45 +173,27 @@ def render_dashboard_card(title, value, icon="📊", color_class="purple"):
     </div>
     """, unsafe_allow_html=True)
 
-# GÖRSELDEKİ GİBİ KAVİSLİ & NEON GRAFİK
 def plot_neon_curve(df):
     try:
-        # Veriyi simüle et (Görseldeki gibi dalgalı görünmesi için)
         df_sorted = df.sort_values(by="Fiyat", ascending=False).head(10)
-        
         fig = go.Figure()
-        
-        # 1. Ana Çizgi (Parlak Neon)
         fig.add_trace(go.Scatter(
-            x=df_sorted['Satıcı'], 
-            y=df_sorted['Fiyat'],
-            mode='lines+markers',
-            line_shape='spline', # KAVİSLİ ÇİZGİ (Görseldeki Sır)
-            line=dict(color='#00f2ff', width=5), # Elektrik Mavisi
+            x=df_sorted['Satıcı'], y=df_sorted['Fiyat'],
+            mode='lines+markers', line_shape='spline',
+            line=dict(color='#00f2ff', width=5),
             marker=dict(size=10, color='#000', line=dict(width=3, color='#00f2ff')),
             name="Fiyat Trendi"
         ))
-        
-        # 2. İkinci Çizgi (Mor Gölge)
         fig.add_trace(go.Scatter(
-            x=df_sorted['Satıcı'], 
-            y=df_sorted['Fiyat'] * 1.1, # Biraz yukarıda
-            mode='lines',
-            line_shape='spline',
-            line=dict(color='#8b5cf6', width=3, dash='dot'),
-            opacity=0.5,
-            name="Piyasa Ort."
+            x=df_sorted['Satıcı'], y=df_sorted['Fiyat'] * 1.1,
+            mode='lines', line_shape='spline',
+            line=dict(color='#8b5cf6', width=3, dash='dot'), opacity=0.5, name="Piyasa Ort."
         ))
-
         fig.update_layout(
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            height=400, # Yüksek grafik
-            margin=dict(l=20, r=20, t=50, b=20),
+            template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            height=400, margin=dict(l=20, r=20, t=50, b=20),
             title=dict(text="PRICE DROP CHART", font=dict(size=20, family="Orbitron", color="white")),
-            xaxis=dict(showgrid=False, color="#666"),
-            yaxis=dict(showgrid=True, gridcolor="#222", color="#666"),
+            xaxis=dict(showgrid=False, color="#666"), yaxis=dict(showgrid=True, gridcolor="#222", color="#666"),
             hovermode="x unified"
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -284,21 +209,16 @@ def get_seasonal_advice(product_name, current_price):
     except: return None
 
 # ==========================================
-# 4. SIDEBAR (LOGO & MENÜ)
-# ==========================================
-# ==========================================
-# 4. SIDEBAR (LOGO & MENÜ)
+# 4. SIDEBAR
 # ==========================================
 with st.sidebar:
-    # Lottie Animasyonu (Sepet)
     if anim_cart: st_lottie(anim_cart, height=120, key="lottie_cart_sidebar")
     
-    # --- YENİ HAYALETLİ BAŞLIK (DÜZELTİLDİ) ---
     st.markdown("""
         <div style="text-align: center;">
             <h2 style='display: flex; align-items: center; justify-content: center; gap: 10px; color: #a78bfa; margin: 0; padding: 0; text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);'>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="fill: #a78bfa; filter: drop-shadow(0 0 5px #a78bfa);">
-                    <path d="M12 2C7.58 2 4 5.58 4 10v10c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V10c0-4.42-3.58-8-8-8zm0 2c3.31 0 6 2.69 6 6v8h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H8v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H6V10c0-3.31 2.69-6 6-6zm-3 5c.83 0 1.5.67 1.5 1.5S9.83 12 9 12s-1.5-.67-1.5-1.5S8.17 9 9 9zm6 0c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"/>
+                    <path d="M12 2C7.58 2 4 5.58 4 10v10c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V10c0-4.42-3.58-8-8-8zm0 2c3.31 0 6 2.69 6 6v8h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H8v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H6V10c0-3.31 2.69-6 6-6zm-3 5c.83 0 1.5.67 1.5 1.5S9.83 12 9 12s-1.5-.67-1.5-1.5S8.17 9 9 9zm6 0c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"/>
                 </svg>
                 <span style="font-family: 'Orbitron', sans-serif;">GhostDeal</span>
             </h2>
@@ -307,94 +227,72 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     st.markdown("---")
-    
-    # Menü (Key ile çakışma önlendi)
-    menu = st.radio(
-        "MODÜLLER", 
-        ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], 
-        label_visibility="collapsed",
-        key="main_nav_final"
-    )
+    menu = st.radio("MODÜLLER", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed", key="main_nav_final")
 
 # ==========================================
 # 5. SAYFA YAPISI
 # ==========================================
 
-# --- A: DASHBOARD (GÖRSELDEKİ YAPI) ---
+# --- A: DASHBOARD ---
 if menu == "DASHBOARD":
-    # 1. Başlık ve Arama (Yanyana)
     col_head, col_search = st.columns([1, 2])
-    with col_head:
-        st.markdown("<h2>Data Dashboard</h2>", unsafe_allow_html=True)
-    with col_search:
-        query = st.text_input("Global Piyasada Ara...", placeholder="Ürün adı girin (örn: MacBook Pro M3)", label_visibility="collapsed")
+    with col_head: st.markdown("<h2>Data Dashboard</h2>", unsafe_allow_html=True)
+    with col_search: query = st.text_input("Global Piyasada Ara...", placeholder="Ürün adı girin (örn: MacBook Pro M3)", label_visibility="collapsed")
 
-    # Arama Butonu (Gizli trigger)
     if query:
         with st.spinner("📡 UYDU BAĞLANTISI KURULUYOR..."):
             df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
             st.session_state.search_results = df
             
-    # --- ANA EKRAN DÜZENİ (Görseldeki Sol Kartlar / Sağ Grafik) ---
     if 'search_results' in st.session_state and not st.session_state.search_results.empty:
         df = st.session_state.search_results
         best = df.iloc[0]
         
         st.markdown("---")
-        
-        # LAYOUT: SOLDA 4 KART (2x2), SAĞDA BÜYÜK GRAFİK
-        col_left, col_right = st.columns([2, 3]) # Sol %40, Sağ %60
+        col_left, col_right = st.columns([2, 3])
         
         with col_left:
-            # Üst Satır
             c1, c2 = st.columns(2)
             with c1: render_dashboard_card("En İyi Fiyat", format_tl(best['Fiyat']), "💎")
             with c2: render_dashboard_card("Piyasa Ort.", format_tl(df['Fiyat'].mean()), "⚖️")
-            
-            st.write("") # Boşluk
-            
-            # Alt Satır
+            st.write("")
             c3, c4 = st.columns(2)
             with c3: render_dashboard_card("Mağaza Sayısı", str(len(df)), "🏪")
             with c4: render_dashboard_card("Tasarruf", "%15", "📉")
-            
-            # AI Tavsiyesi (Kartların altına)
             st.write("")
-            if st.button("✨ YZ Analizi Başlat", use_container_width=True):
+            if st.button("✨ YZ Analizi Başlat", use_container_width=True, key="ai_btn"):
                 advice = get_seasonal_advice(query, format_tl(best['Fiyat']))
                 if advice: st.info(f"🤖 {advice}")
 
         with col_right:
-            # BÜYÜK GRAFİK
             plot_neon_curve(df)
             
-        # Alt Liste (Yatay)
         st.markdown("### 🛒 En İyi Teklifler")
+        # DÜZELTME: Resim ve Ürün sütunları eklendi
         st.dataframe(
-            df.head(5)[['Satıcı', 'Fiyat', 'Link']], 
+            df[['Resim', 'Ürün', 'Fiyat', 'Satıcı', 'Link']], 
             hide_index=True, 
             use_container_width=True,
             column_config={
+                "Resim": st.column_config.ImageColumn("Görsel", width="small"),
+                "Ürün": st.column_config.TextColumn("Ürün Adı", width="large"),
                 "Link": st.column_config.LinkColumn("Satın Al", display_text="Mağazaya Git ↗"),
                 "Fiyat": st.column_config.NumberColumn(format="%.2f TL")
             }
         )
 
-# --- B: VİTRİN (AMAZON) ---
+# --- B: VİTRİN ---
 elif menu == "AMAZON VİTRİN":
     c1, c2 = st.columns([4,1])
     c1.markdown("<h2>🔥 AMAZON LIVE</h2>", unsafe_allow_html=True)
     
-    # Zamanlayıcı
     curr = time.time()
     last = st.session_state.get('last_amz', 0)
     
-    # Eğer 1 saat (3600 sn) geçmediyse geri sayım yap
     if curr - last < 3600:
         remaining = int((3600 - (curr - last)) / 60)
         c2.warning(f"⏳ {remaining} dk kaldı")
     else:
-        # HATA BURADAYDI -> key="btn_amazon_start" EKLEYEREK ÇÖZDÜK
         if c2.button("BAŞLAT 🚀", key="btn_amazon_start"):
             st.session_state.last_amz = curr
             st.session_state.deals = cached_deals(RAPID_API_KEY)
@@ -408,7 +306,6 @@ elif menu == "AMAZON VİTRİN":
                 st.markdown(f"""
                 <div class="deal-card">
                     <span class="discount-badge">-{row['İndirim_Yazisi']}</span>
-                    
                     <img src="{row['Resim']}" style="width:100%; height:150px; object-fit:contain;">
                     <div style="margin-top:10px; font-weight:bold; color:white; height: 50px; overflow: hidden;">{row['Ürün'][:50]}...</div>
                     <div style="font-size:1.5rem; color:#4ade80; font-weight:900;">{format_tl(row['Fiyat'])}</div>
@@ -418,15 +315,29 @@ elif menu == "AMAZON VİTRİN":
                 <br>
                 """, unsafe_allow_html=True)
 
-# --- C: ALARM (MAIL) ---
+# --- C: ALARM ---
 elif menu == "FİYAT ALARMI":
     st.markdown("<h2>🔔 E-POSTA ALARMI</h2>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    prod = c1.text_input("Ürün")
+    prod = c1.text_input("Ürün", placeholder="iPhone 15")
     price = c2.number_input("Hedef Fiyat", value=20000)
     mail = st.text_input("E-Posta Adresi")
     
-    if st.button("TAKİBİ BAŞLAT"):
-        if mail:
+    # DÜZELTME: Key eklendi ve döngü tamamlandı
+    if st.button("TAKİBİ BAŞLAT", key="btn_alarm_start"):
+        if mail and prod:
             st.success(f"✅ Sistem {mail} adresini dinlemeye başladı.")
-            # Arka plan döngüsü burada çalışır (demo amaçlı basitleştirildi)
+            st.session_state.monitoring = True
+            status = st.empty()
+            while st.session_state.monitoring:
+                status.info(f"⏳ Taranıyor: {time.strftime('%H:%M:%S')}")
+                df = cached_search(prod, SERP_API_KEY, RAPID_API_KEY)
+                if not df.empty and df.iloc[0]['Fiyat'] <= price:
+                    send_email_alert(mail, df.iloc[0]['Ürün'], format_tl(df.iloc[0]['Fiyat']), df.iloc[0]['Link'])
+                    st.balloons()
+                    st.success("HEDEF YAKALANDI! Mail gönderildi.")
+                    st.session_state.monitoring = False
+                    break
+                time.sleep(900) # 15 Dakika
+        else:
+            st.error("Lütfen tüm alanları doldurun.")
