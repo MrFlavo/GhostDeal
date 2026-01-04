@@ -292,11 +292,6 @@ with st.sidebar:
     
     st.markdown("---")
     menu = st.radio("MODÜLLER", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed")
-    
-    if anim_cart: st_lottie(anim_cart, height=120)
-    
-    st.markdown("---")
-    menu = st.radio("MODÜLLER", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed")
 
 # ==========================================
 # 5. SAYFA YAPISI
