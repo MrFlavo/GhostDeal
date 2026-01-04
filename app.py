@@ -96,64 +96,48 @@ def send_email_alert(to_email, product_name, price, link):
     except: return False
 
 # ==========================================
-# 2. CSS (RESPONSIVE & PROFESSIONAL FIX)
+# 2. COMMAND CENTER CSS (ORİJİNAL)
 # ==========================================
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
         
-        /* HEADER & GENEL */
         header {background: transparent !important;}
         [data-testid="collapsedControl"] {display: block !important; color: #a78bfa !important;}
         .stDeployButton, #MainMenu, footer {display:none; visibility: hidden;}
-        
         .stApp {
             background-color: #050505; 
             background-image: radial-gradient(circle at 50% 50%, #1a103c 0%, #000 70%);
             color: #cbd5e1; font-family: 'Inter', sans-serif;
             padding-bottom: 80px;
         }
-
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif !important; letter-spacing: 2px;
             background: linear-gradient(90deg, #a78bfa, #3b82f6);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0px 0px 30px rgba(59, 130, 246, 0.5);
         }
-
         [data-testid="stSidebar"] {background-color: #0a0a0a !important; border-right: 1px solid #1f1f1f;}
-
-        /* DASHBOARD KARTLARI (RESPONSIVE) */
+        
+        /* DASHBOARD KARTLARI */
         .dashboard-card {
             background: linear-gradient(145deg, rgba(20, 20, 30, 0.8), rgba(10, 10, 15, 0.9));
             border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 20px;
             text-align: left; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease; 
-            min-height: 160px; /* Sabit yükseklik yerine min-height */
-            display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;
+            transition: all 0.3s ease; height: 160px; display: flex; flex-direction: column;
+            justify-content: center; position: relative; overflow: hidden;
         }
         .dashboard-card::before {content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #8b5cf6, #3b82f6); box-shadow: 0 0 10px #8b5cf6;}
-        
-        .card-icon {
-            font-size: 24px; margin-bottom: 10px; background: rgba(139, 92, 246, 0.2); 
-            width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #a78bfa;
-        }
-        .card-value {
-            font-size: 1.8rem; font-weight: 700; color: white !important; font-family: 'Orbitron', sans-serif !important;
-            white-space: nowrap; /* Yazının alt satıra kaymasını engelle */
-        }
+        .card-icon {font-size: 24px; margin-bottom: 10px; background: rgba(139, 92, 246, 0.2); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #a78bfa;}
+        .card-value {font-size: 1.8rem; font-weight: 700; color: white !important; font-family: 'Orbitron', sans-serif !important;}
         .card-label {font-size: 0.85rem; color: #94a3b8 !important;}
 
-        /* MEDIA QUERIES (Eğer ekran küçülürse fontları küçült) */
-        @media (max-width: 1200px) {
-            .card-value { font-size: 1.4rem !important; }
-            h2 { font-size: 1.5rem !important; }
-        }
-        @media (max-width: 768px) {
-            .dashboard-card { margin-bottom: 15px; } /* Mobilde kartlar arası boşluk */
+        /* Responsive Düzeltme: Ekran küçülünce fontları ve kart yüksekliğini ayarla */
+        @media (max-width: 900px) {
+            .card-value { font-size: 1.3rem !important; }
+            .dashboard-card { height: auto !important; min-height: 140px; }
         }
 
-        /* DEAL CARDS */
         .discount-badge {
             position: absolute; top: 10px; right: 10px;
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
@@ -162,11 +146,8 @@ st.markdown("""
         }
         .deal-card {
             background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px; padding: 15px; height: 420px; 
-            display: flex; flex-direction: column; justify-content: space-between; position: relative;
+            border-radius: 16px; padding: 15px; height: 420px; display: flex; flex-direction: column; justify-content: space-between; position: relative;
         }
-
-        /* TICKER */
         .ticker-wrap {
             position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; height: 40px;
             background-color: rgba(10, 10, 10, 0.95); border-top: 1px solid #333; z-index: 9999;
@@ -179,19 +160,13 @@ st.markdown("""
         .ticker-item { display: inline-block; padding: 0 2rem; color: #ccc; }
         .ticker-up { color: #4ade80; } .ticker-down { color: #ef4444; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-        
+
         /* Kamera Butonu Stili */
         div[data-testid="stButton"] > button {
-            width: 100%;
-            border-radius: 10px;
-            border: 1px solid #333;
-            background-color: #1a1a1a;
-            color: #cbd5e1;
+            width: 100%; height: 100%; border-radius: 10px;
+            background-color: #1a1a1a; color: #a78bfa; border: 1px solid #333;
         }
-        div[data-testid="stButton"] > button:hover {
-            border-color: #8b5cf6;
-            color: #8b5cf6;
-        }
+        div[data-testid="stButton"] > button:hover { border-color: #a78bfa; color: #fff; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -256,59 +231,52 @@ with st.sidebar:
             <h2 style='display: flex; align-items: center; justify-content: center; gap: 10px; color: #a78bfa; margin: 0;'>
                 <span style="font-family: 'Orbitron';">GhostDeal</span>
             </h2>
-            <p style='color: #666; font-size: 0.6rem; letter-spacing: 2px;'>PROFESSIONAL v24.0</p>
+            <p style='color: #666; font-size: 0.6rem; letter-spacing: 2px;'>ULTIMATE VISION v24.0</p>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
-    # GHOST VISION menüden kaldırıldı, dashboard'a entegre edildi
     menu = st.radio("MENÜ", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed", key="main_nav")
 
 # ==========================================
 # 5. SAYFA YAPILARI
 # ==========================================
 
-# --- DASHBOARD (KAMERA ENTEGRELİ) ---
+# --- DASHBOARD (KAMERA + ARAMA) ---
 if menu == "DASHBOARD":
-    # 1. BAŞLIK
     st.markdown("<h2>Dashboard</h2>", unsafe_allow_html=True)
     
-    # 2. ARAMA BARI + KAMERA BUTONU (YAN YANA)
+    # Arama ve Kamera Yan Yana
     col_search, col_cam = st.columns([6, 1], gap="small")
     
     with col_search:
-        # Session state'den gelen sorguyu al (Barkod okunduysa buraya düşer)
+        # Session state'den sorguyu al (Barkod varsa gelir)
         initial_q = st.session_state.get('search_query', "")
         query = st.text_input("Arama", value=initial_q, placeholder="Ürün adı girin veya kamerayı açın...", label_visibility="collapsed")
     
     with col_cam:
-        # Kamera Aç/Kapa Butonu
-        if st.button("📷", help="Barkod Okuyucuyu Aç"):
-            # Toggle (Aç/Kapa) mantığı
-            st.session_state.show_camera = not st.session_state.get('show_camera', False)
+        # Kamera Toggle Butonu
+        if st.button("📷", help="Barkod Tara"):
+            st.session_state.show_cam = not st.session_state.get('show_cam', False)
     
-    # 3. KAMERA ALANI (Eğer butonla açıldıysa görünür)
-    if st.session_state.get('show_camera', False):
-        st.info("💡 Barkodu kameraya gösterin...")
-        cam_img = st.camera_input("Scanner", label_visibility="collapsed")
-        
-        if cam_img and HAS_BARCODE_LIB:
-            img = Image.open(cam_img)
+    # Kamera Alanı (Butona basılınca açılır)
+    if st.session_state.get('show_cam', False):
+        st.info("💡 Barkodu gösterin...")
+        cam_in = st.camera_input("Scanner", label_visibility="collapsed")
+        if cam_in and HAS_BARCODE_LIB:
+            img = Image.open(cam_in)
             decoded = decode(img)
             if decoded:
                 b_data = decoded[0].data.decode("utf-8")
                 st.success(f"✅ Okundu: {b_data}")
-                # Barkodu sorguya at, kamerayı kapat ve sayfayı yenile
                 st.session_state.search_query = b_data
-                st.session_state.show_camera = False 
-                st.rerun()
-            else:
-                st.warning("❌ Okunamadı. Tekrar deneyin.")
+                st.session_state.show_cam = False # Kamerayı kapat
+                st.rerun() # Sayfayı yenile ve aramayı yap
+            else: st.warning("❌ Okunamadı.")
 
-    # 4. ARAMA SONUÇLARI
+    # Arama İşlemi
     if query:
+        st.session_state.search_query = query # Sorguyu sabitle
         with st.spinner("📡 Global Piyasalar Taranıyor..."):
-            # Her yeni aramada session'daki sorguyu güncelle
-            st.session_state.search_query = query
             raw_df = cached_search(query, SERP_API_KEY, RAPID_API_KEY)
             df = filter_irrelevant_products(raw_df, query)
             st.session_state.results = df
@@ -320,24 +288,19 @@ if menu == "DASHBOARD":
         g_score = min(100, int(50 + (saving * 2)))
 
         st.markdown("---")
-        # Layout: Sol Kartlar - Sağ Grafik
         l, r = st.columns([2, 3], gap="medium")
-        
         with l:
             c1, c2 = st.columns(2)
             with c1: render_dashboard_card("En İyi Fiyat", format_tl(best_p), "💎")
             with c2: render_dashboard_card("Piyasa Ort.", format_tl(avg_p), "⚖️")
             st.write(""); plot_ghost_gauge(g_score)
-            
             if st.button("✨ YZ Analizi Başlat", use_container_width=True, key="ai_dash"):
                 if HAS_AI:
                     genai.configure(api_key=GEMINI_API_KEY)
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     res = model.generate_content(f"Ürün: {query}, Fiyat: {best_p}. Bu fiyata alınır mı? Kısa cevap.")
                     st.info(f"🤖 {res.text}")
-        
-        with r: 
-            plot_neon_prediction(df, avg_p)
+        with r: plot_neon_prediction(df, avg_p)
         
         st.markdown("### 📋 Teklif Listesi")
         st.dataframe(df[['Resim', 'Ürün', 'Fiyat', 'Satıcı', 'Link']], hide_index=True, use_container_width=True, 
@@ -414,7 +377,7 @@ st.markdown(f"""
         <div class="ticker-item">MGROS <span class="ticker-up">▲ %1.2</span></div>
         <div class="ticker-item">GARAN <span class="ticker-down">▼ %0.5</span></div>
         <div class="ticker-item">iPhone 17 Pro <span class="ticker-down">▼ %12.4 (Fırsat)</span></div>
-        <div class="ticker-item">BMW 216d Motor Yağı <span class="ticker-up">▲ %2.1</span></div>
+        <div class="ticker-item">BMW 216d Bakım Kiti <span class="ticker-up">▲ %2.1</span></div>
         <div class="ticker-item">USD/TL: {34.20 + random.uniform(-0.1, 0.1):.2f}</div>
         <div class="ticker-item">BIMAS <span class="ticker-up">▲ %0.8</span></div>
         <div class="ticker-item">Stanley IceFlow <span class="ticker-down">▼ %15.0 (Ghost Deal)</span></div>
