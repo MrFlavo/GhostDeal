@@ -75,30 +75,25 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap');
         
-        /* --- DÜZELTİLEN KISIM: HEADER VE SIDEBAR BUTONU --- */
+        /* --- DÜZELTME: HEADER VE SIDEBAR İKONU --- */
         header {
-            background: transparent !important; /* Arkaplanı şeffaf yap */
+            background: transparent !important;
         }
         
-        /* Sidebar açma/kapama butonunu (ok işareti) görünür yap ve rengini ayarla */
-        [data-testid="collapsedControl"] {
-            display: block !important;
-            color: #a78bfa !important; /* Neon Mor renk */
-            z-index: 10000; /* En önde dursun */
+        /* İkonların bozulmasını önleyen kural */
+        .material-icons, .st-emotion-cache-16idsys, .st-emotion-cache-10trblm {
+            font-family: 'Material Icons' !important;
         }
-        
-        /* Sağ üstteki menüyü ve Deploy butonunu gizle (İsteğe bağlı) */
-        .stDeployButton {display:none;}
-        #MainMenu {visibility: hidden;} 
-        footer {visibility: hidden;}
 
         /* --- 1. ARKAPLAN --- */
         .stApp {
             background-color: #050505; 
             background-image: radial-gradient(circle at 50% 50%, #1a103c 0%, #000 70%);
+            color: #cbd5e1; /* Genel yazı rengi */
+            font-family: 'Inter', sans-serif; /* Genel font */
         }
 
-        /* --- 2. FONTLAR --- */
+        /* --- 2. FONTLAR (Sadece Başlıklar ve Metinler) --- */
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif !important;
             letter-spacing: 2px;
@@ -107,9 +102,14 @@ st.markdown("""
             -webkit-text-fill-color: transparent;
             text-shadow: 0px 0px 30px rgba(59, 130, 246, 0.5);
         }
-        p, div, span, label { font-family: 'Inter', sans-serif !important; color: #cbd5e1 !important; }
+        
+        /* SPAN ve DIV'i zorlamayı bıraktık, böylece ikonlar bozulmayacak */
+        p, label, .stMarkdown { 
+            font-family: 'Inter', sans-serif !important; 
+            color: #cbd5e1 !important; 
+        }
 
-        /* --- 3. SIDEBAR (Sol Panel) --- */
+        /* --- 3. SIDEBAR --- */
         [data-testid="stSidebar"] {
             background-color: #0a0a0a !important;
             border-right: 1px solid #1f1f1f;
@@ -154,6 +154,8 @@ st.markdown("""
             display: flex; align-items: center; justify-content: center;
             border-radius: 12px;
             color: #a78bfa;
+            /* İkon fontunu koru */
+            font-family: "Segoe UI Emoji", "Roboto", sans-serif !important;
         }
         
         .card-value {
@@ -166,6 +168,7 @@ st.markdown("""
         .card-label {
             font-size: 0.85rem;
             color: #94a3b8 !important;
+            font-family: 'Inter', sans-serif !important;
         }
 
         /* --- 5. FIRSAT KARTLARI --- */
@@ -185,6 +188,11 @@ st.markdown("""
             color: white !important;
             border-radius: 10px;
         }
+        
+        /* Gereksiz elementleri gizle */
+        .stDeployButton {display:none;}
+        #MainMenu {visibility: hidden;} 
+        footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -264,10 +272,26 @@ def get_seasonal_advice(product_name, current_price):
 # 4. SIDEBAR (LOGO & MENÜ)
 # ==========================================
 with st.sidebar:
+    # Lottie Animasyonu (Sepet) hala üstte kalsın
+    if anim_cart: st_lottie(anim_cart, height=120)
+    
+    # --- YENİ HAYALETLİ BAŞLIK ---
     st.markdown("""
-        <h2 style='text-align: center; color: #a78bfa; margin-bottom: 0;'>GhostDeal</h2>
-        <p style='text-align: center; color: #666; font-size: 0.7rem; letter-spacing: 3px;'>COMMAND CENTER</p>
+        <div style="text-align: center;">
+            <h2 style='display: inline-flex; align-items: center; justify-content: center; color: #a78bfa; margin-bottom: 0; text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);'>
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="fill: #a78bfa; filter: drop-shadow(0 0 5px #a78bfa); margin-right: 10px;">
+                    <path d="M12 2C7.58 2 4 5.58 4 10v10c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V10c0-4.42-3.58-8-8-8zm0 2c3.31 0 6 2.69 6 6v8h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H8v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H6V10c0-3.31 2.69-6 6-6zm-3 5c.83 0 1.5.67 1.5 1.5S9.83 12 9 12s-1.5-.67-1.5-1.5S8.17 9 9 9zm6 0c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"/>
+                </svg>
+                
+                GhostDeal
+            </h2>
+            <p style='color: #666; font-size: 0.7rem; letter-spacing: 3px; margin-top: 5px; opacity: 0.8;'>COMMAND CENTER</p>
+        </div>
     """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    menu = st.radio("MODÜLLER", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed")
     
     if anim_cart: st_lottie(anim_cart, height=120)
     
