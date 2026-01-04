@@ -374,13 +374,9 @@ st.markdown(f"""
 <div class="ticker-wrap">
     <div class="ticker">
         <div class="ticker-item">GHOSTDEAL LIVE 🟢</div>
-        <div class="ticker-item">MGROS <span class="ticker-up">▲ %1.2</span></div>
-        <div class="ticker-item">GARAN <span class="ticker-down">▼ %0.5</span></div>
-        <div class="ticker-item">iPhone 17 Pro <span class="ticker-down">▼ %12.4 (Fırsat)</span></div>
-        <div class="ticker-item">BMW 216d Bakım Kiti <span class="ticker-up">▲ %2.1</span></div>
-        <div class="ticker-item">USD/TL: {34.20 + random.uniform(-0.1, 0.1):.2f}</div>
-        <div class="ticker-item">BIMAS <span class="ticker-up">▲ %0.8</span></div>
-        <div class="ticker-item">Stanley IceFlow <span class="ticker-down">▼ %15.0 (Ghost Deal)</span></div>
+        <div class="ticker-item">EUR/TL: {50.37 + random.uniform(-0.1, 0.1):.2f}</div>
+        <div class="ticker-item">USD/TL: {43.18 + random.uniform(-0.1, 0.1):.2f}</div>
+        <div class="ticker-item">XU100.IS/TL: {11498 + random.uniform(-0.1, 0.1):.2f}</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
