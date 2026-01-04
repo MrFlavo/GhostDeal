@@ -271,27 +271,35 @@ def get_seasonal_advice(product_name, current_price):
 # ==========================================
 # 4. SIDEBAR (LOGO & MENÜ)
 # ==========================================
+# ==========================================
+# 4. SIDEBAR (LOGO & MENÜ)
+# ==========================================
 with st.sidebar:
-    # Lottie Animasyonu (Sepet) hala üstte kalsın
-    if anim_cart: st_lottie(anim_cart, height=120)
+    # Lottie Animasyonu (Sepet)
+    if anim_cart: st_lottie(anim_cart, height=120, key="lottie_cart_sidebar")
     
-    # --- YENİ HAYALETLİ BAŞLIK ---
+    # --- YENİ HAYALETLİ BAŞLIK (DÜZELTİLDİ) ---
     st.markdown("""
         <div style="text-align: center;">
-            <h2 style='display: inline-flex; align-items: center; justify-content: center; color: #a78bfa; margin-bottom: 0; text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);'>
-                
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="fill: #a78bfa; filter: drop-shadow(0 0 5px #a78bfa); margin-right: 10px;">
+            <h2 style='display: flex; align-items: center; justify-content: center; gap: 10px; color: #a78bfa; margin: 0; padding: 0; text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="fill: #a78bfa; filter: drop-shadow(0 0 5px #a78bfa);">
                     <path d="M12 2C7.58 2 4 5.58 4 10v10c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-3h2v3c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V10c0-4.42-3.58-8-8-8zm0 2c3.31 0 6 2.69 6 6v8h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3h-2v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H8v-3c0-.55-.45-1-1-1s-1 .45-1 1v3H6V10c0-3.31 2.69-6 6-6zm-3 5c.83 0 1.5.67 1.5 1.5S9.83 12 9 12s-1.5-.67-1.5-1.5S8.17 9 9 9zm6 0c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"/>
                 </svg>
-                
-                GhostDeal
+                <span style="font-family: 'Orbitron', sans-serif;">GhostDeal</span>
             </h2>
-            <p style='color: #666; font-size: 0.7rem; letter-spacing: 3px; margin-top: 5px; opacity: 0.8;'>COMMAND CENTER</p>
+            <p style='color: #666; font-size: 0.7rem; letter-spacing: 3px; margin-top: 5px; opacity: 0.8; font-family: "Inter", sans-serif;'>COMMAND CENTER</p>
         </div>
     """, unsafe_allow_html=True)
     
     st.markdown("---")
-    menu = st.radio("MODÜLLER", ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], label_visibility="collapsed")
+    
+    # Menü (Key ile çakışma önlendi)
+    menu = st.radio(
+        "MODÜLLER", 
+        ["DASHBOARD", "AMAZON VİTRİN", "FİYAT ALARMI"], 
+        label_visibility="collapsed",
+        key="main_nav_final"
+    )
 
 # ==========================================
 # 5. SAYFA YAPISI
