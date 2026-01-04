@@ -5,3 +5,6 @@ google-search-results
 google-generativeai
 streamlit-lottie
 plotly
+pyzbar
+opencv-python-headless
+pillow
